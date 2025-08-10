@@ -39,8 +39,8 @@ MAX_HISTORY_RECORDS = 100
 MAX_ALERTS_DISPLAY = 10
 
 # AI Settings
-OPENROUTER_API_KEY = "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"
-OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+OPENROUTER_API_KEY = "OPENROUTER_API_KEY"
+OPENROUTER_URL = "OPENROUTER_URL"
 AI_MODEL = "microsoft/phi-3.5-mini-128k-instruct"
 AI_TIMEOUT = 30  # seconds
 

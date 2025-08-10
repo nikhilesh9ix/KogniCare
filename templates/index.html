@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Integrated Patient Monitoring System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsPDF/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f8f9fd;
+            color: #2d3748;
+            line-height: 1.6;
+        }
+
+        /* Top Navigation */
+        .navbar {
+            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+            padding: 12px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .navbar-brand i {
+            font-size: 24px;
+        }
+
+        .navbar-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: white;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .navbar-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+        }
+
+        .navbar-user:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* Main Dashboard Layout */
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 400px;
+            grid-template-rows: auto auto 1fr;
+            gap: 20px;
+            min-height: calc(100vh - 80px);
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 12px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Patient Info Card */
+        .patient-card {
+            grid-column: span 2;
+        }
+
+        .patient-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .patient-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .patient-details h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .patient-meta {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .patient-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .status-stable {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-monitoring {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-critical {
+            background: #fecaca;
+            color: #991b1b;
+        }
+
+        /* Live Vitals Panel */
+        .vitals-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .vital-card {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .vital-card.normal {
+            border-color: #10b981;
+            background: #ecfdf5;
+        }
+
+        .vital-card.warning {
+            border-color: #f59e0b;
+            background: #fffbeb;
+            animation: warningPulse 3s infinite;
+        }
+
+        .vital-card.critical {
+            border-color: #ef4444;
+            background: #fef2f2;
+            animation: criticalPulse 1s infinite;
+        }
+
+        @keyframes warningPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        @keyframes criticalPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+        }
+
+        .vital-icon {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .vital-card.normal .vital-icon { color: #10b981; }
+        .vital-card.warning .vital-icon { color: #f59e0b; }
+        .vital-card.critical .vital-icon { color: #ef4444; }
+
+        .vital-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 8px 0;
+        }
+
+        .vital-label {
+            font-size: 14px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .vital-unit {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        .vital-trend {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 12px;
+        }
+
+        /* Chart Panel */
+        .chart-card {
+            grid-row: span 2;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 16px;
+        }
+
+        /* Camera Feed */
+        .camera-card {
+            grid-row: span 3;
+        }
+
+        .video-container {
+            position: relative;
+            margin: 16px 0;
+        }
+
+        .video-feed {
+            width: 100%;
+            height: 280px;
+            background: #000;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .video-feed:hover {
+            background: #1a1a1a;
+        }
+
+        .video-feed video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .video-placeholder {
+            text-align: center;
+            z-index: 2;
+        }
+
+        .video-placeholder i {
+            font-size: 48px;
+            margin-bottom: 10px;
+            opacity: 0.7;
+        }
+
+        .video-placeholder small {
+            opacity: 0.7;
+        }
+
+        #patientVideo {
+            display: none;
+        }
+
+        .video-overlay span {
+            font-weight: 500;
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .ai-analysis-panel {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .ai-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            color: #0ea5e9;
+            font-weight: 500;
+        }
+
+        /* Alerts Panel */
+        .alerts-card {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .alert-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+
+        .alert-item.normal {
+            background: #ecfdf5;
+            border-color: #10b981;
+        }
+
+        .alert-item.warning {
+            background: #fffbeb;
+            border-color: #f59e0b;
+        }
+
+        .alert-item.critical {
+            background: #fef2f2;
+            border-color: #ef4444;
+        }
+
+        .alert-icon {
+            font-size: 16px;
+            margin-top: 2px;
+        }
+
+        .alert-content {
+            flex: 1;
+        }
+
+        .alert-message {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .alert-time {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        /* AI Chatbot */
+        .chatbot-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 380px;
+            height: 500px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .chatbot-container.open {
+            transform: translateY(0);
+        }
+
+        .chatbot-header {
+            background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+            color: white;
+            padding: 16px 20px;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chatbot-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .chatbot-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+        }
+
+        .chatbot-close:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            background: #f8fafc;
+        }
+
+        .message {
+            margin-bottom: 16px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .message.assistant .message-avatar {
+            background: #0ea5e9;
+            color: white;
+        }
+
+        .message.user .message-avatar {
+            background: #64748b;
+            color: white;
+        }
+
+        .message-content {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 12px;
+            max-width: 80%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            line-height: 1.5;
+        }
+
+        .message.user .message-content {
+            background: #0ea5e9;
+            color: white;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #94a3b8;
+            animation: typingAnimation 1.5s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingAnimation {
+            0%, 60%, 100% { opacity: 0.3; }
+            30% { opacity: 1; }
+        }
+
+        .chat-input {
+            padding: 16px;
+            border-top: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 0 0 16px 16px;
+        }
+
+        .chat-input-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 10px 16px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .chat-input input:focus {
+            border-color: #0ea5e9;
+        }
+
+        .chat-send-btn {
+            background: #0ea5e9;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .chat-send-btn:hover {
+            background: #0284c7;
+        }
+
+        .chat-send-btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        /* Chat Toggle Button */
+        .chat-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(14, 165, 233, 0.3);
+            transition: all 0.3s ease;
+            z-index: 999;
+        }
+
+        .chat-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 15px 35px rgba(14, 165, 233, 0.4);
+        }
+
+        .chat-toggle.hidden {
+            display: none;
+        }
+
+        /* Buttons */
+        .btn {
+            background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+        }
+
+        .btn-secondary {
+            background: #64748b;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        /* Emergency Banner */
+        .emergency-banner {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 8px;
+            font-weight: 600;
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+            z-index: 1000;
+            animation: emergencySlide 0.5s ease, emergencyPulse 2s infinite 0.5s;
+            display: none;
+        }
+
+        @keyframes emergencySlide {
+            from { transform: translateX(-50%) translateY(-100%); }
+            to { transform: translateX(-50%) translateY(0); }
+        }
+
+        @keyframes emergencyPulse {
+            0%, 100% { box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3); }
+            50% { box-shadow: 0 10px 25px rgba(239, 68, 68, 0.6); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .dashboard-container {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .camera-card {
+                grid-column: span 2;
+                grid-row: span 1;
+            }
+            
+            .chatbot-container {
+                width: 340px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+                padding: 10px;
+            }
+            
+            .patient-card {
+                grid-column: span 1;
+            }
+            
+            .chart-card, .camera-card {
+                grid-column: span 1;
+                grid-row: span 1;
+            }
+            
+            .patient-meta {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .vitals-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .chatbot-container {
+                width: calc(100vw - 20px);
+                height: calc(100vh - 100px);
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+                width: auto;
+            }
+        }
+
+        /* Loading Animation */
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <i class="fas fa-heartbeat"></i>
+            Kognicare
+        </div>
+        <div class="navbar-status">
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span>Live Monitoring</span>
+            </div>
+            <div class="status-indicator">
+                <i class="fas fa-wifi"></i>
+                <span id="connectionStatus">Connected</span>
+            </div>
+        </div>
+        <div class="navbar-user">
+            <i class="fas fa-user-md"></i>
+            <span>Dr. Sarah Wilson</span>
+            <i class="fas fa-chevron-down"></i>
+        </div>
+    </nav>
+
+    <!-- Emergency Banner -->
+    <div id="emergencyBanner" class="emergency-banner">
+        <i class="fas fa-exclamation-triangle"></i>
+        EMERGENCY ALERT: Critical patient condition detected! Immediate medical attention required.
+    </div>
+
+    <!-- Main Dashboard -->
+    <div class="dashboard-container">
+        <!-- Patient Info Card -->
+        <div class="card patient-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fas fa-user"></i>
+                    Patient Information
+                </div>
+                <div class="patient-status status-stable" id="patientStatusBadge">
+                    <i class="fas fa-circle"></i>
+                    Stable
+                </div>
+            </div>
+            <div class="patient-info">
+                <div class="patient-avatar">JD</div>
+                <div class="patient-details">
+                    <h3 id="patientName">John Doe</h3>
+                    <div class="patient-meta">
+                        <div><strong>Age:</strong> <span id="patientAge">65</span></div>
+                        <div><strong>Gender:</strong> <span id="patientGender">Male</span></div>
+                        <div><strong>Room:</strong> <span id="patientRoom">ICU-201</span></div>
+                        <div><strong>Admission:</strong> <span id="patientAdmission">2 days ago</span></div>
+                    </div>
+                    <div style="margin-top: 12px; color: #64748b; font-size: 14px;">
+                        <strong>Condition:</strong> <span id="patientCondition">Cancer</span>
+                        <br><strong>Attending:</strong> <span id="attendingDoctor">Dr. Sarah Wilson</span> | <strong>Nurse:</strong> <span id="assignedNurse">Emily Johnson</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Vitals Panel -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fas fa-heartbeat"></i>
+                    Live Vital Signs
+                </div>
+                <div style="font-size: 12px; color: #64748b; display: flex; align-items: center; gap: 6px;">
+                    <div class="loading-spinner"></div>
+                    Last updated: <span id="lastUpdate">Just now</span>
+                </div>
+            </div>
+            <div class="vitals-grid">
+                <div class="vital-card normal" id="heartRateCard">
+                    <div class="vital-trend" id="heartRateTrend">
+                        <i class="fas fa-arrow-up" style="color: #10b981;"></i>
+                    </div>
+                    <div class="vital-icon">
+                        <i class="fas fa-heartbeat"></i>
+                    </div>
+                    <div class="vital-value" id="heartRate">78</div>
+                    <div class="vital-label">Heart Rate</div>
+                    <div class="vital-unit">BPM</div>
+                </div>
+                <div class="vital-card normal" id="spo2Card">
+                    <div class="vital-trend" id="spo2Trend">
+                        <i class="fas fa-minus" style="color: #64748b;"></i>
+                    </div>
+                    <div class="vital-icon">
+                        <i class="fas fa-lungs"></i>
+                    </div>
+                    <div class="vital-value" id="spo2">98</div>
+                    <div class="vital-label">SpO₂</div>
+                    <div class="vital-unit">%</div>
+                </div>
+                <div class="vital-card normal" id="tempCard">
+                    <div class="vital-trend" id="tempTrend">
+                        <i class="fas fa-arrow-down" style="color: #10b981;"></i>
+                    </div>
+                    <div class="vital-icon">
+                        <i class="fas fa-thermometer-half"></i>
+                    </div>
+                    <div class="vital-value" id="temperature">36.8</div>
+                    <div class="vital-label">Temperature</div>
+                    <div class="vital-unit">°C</div>
+                </div>
+                <div class="vital-card normal" id="respCard">
+                    <div class="vital-trend" id="respTrend">
+                        <i class="fas fa-minus" style="color: #64748b;"></i>
+                    </div>
+                    <div class="vital-icon">
+                        <i class="fas fa-wind"></i>
+                    </div>
+                    <div class="vital-value" id="respiratoryRate">16</div>
+                    <div class="vital-label">Respiratory Rate</div>
+                    <div class="vital-unit">BPM</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vitals Chart -->
+        <div class="card chart-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fas fa-chart-line"></i>
+                    Vital Signs Trends
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn" onclick="exportChart()">
+                        <i class="fas fa-download"></i>
+                        Export
+                    </button>
+                    <button class="btn" onclick="generateReport()">
+                        <i class="fas fa-file-pdf"></i>
+                        Report
+                    </button>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="vitalsChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Camera & AI Analysis -->
+        <div class="card camera-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fas fa-video"></i>
+                    AI Video Analytics
+                </div>
+            </div>
+            <div class="video-container">
+                <div class="video-feed" id="videoFeed" onclick="toggleVideoFeed()">
+                    <video id="patientVideo" autoplay muted loop>
+                        <source src="/static/Hospital_Patient_Monitoring_Video_Generation.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    <div class="video-placeholder" id="videoPlaceholder">
+                        <i class="fas fa-video"></i>
+                        <br>Patient Camera Feed
+                        <br><small>Click to start monitoring</small>
+                    </div>
+                </div>
+                <div class="video-overlay">
+                    <div class="status-dot" style="animation: none; background: #10b981;"></div>
+                    <span id="videoStatus">Ready</span>
+                </div>
+            </div>
+            <div class="ai-analysis-panel">
+                <div class="ai-status">
+                    <i class="fas fa-robot"></i>
+                    AI Analysis Active
+                </div>
+                <div style="margin-bottom: 8px;">
+                    <strong>Current Status:</strong> <span id="aiAnalysis">Patient appears comfortable and resting</span>
+                </div>
+                <div style="margin-bottom: 8px;">
+                    <strong>Activity Level:</strong> <span id="activityLevel">Low movement</span>
+                </div>
+                <div style="font-size: 12px; color: #64748b;">
+                    <strong>Confidence:</strong> 94% | <strong>Last Analysis:</strong> 2s ago
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts Panel -->
+        <div class="card alerts-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fas fa-bell"></i>
+                    Real-time Alerts
+                    <span id="alertCount" style="background: #0ea5e9; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; margin-left: 8px;">0</span>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-danger" onclick="testEmergency()" style="font-size: 12px; padding: 6px 12px;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Test
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearAlerts()" style="font-size: 12px; padding: 6px 12px;">
+                        <i class="fas fa-trash"></i>
+                        Clear
+                    </button>
+                </div>
+            </div>
+            <div id="alertsList">
+                <div style="text-align: center; color: #64748b; padding: 20px;">
+                    <i class="fas fa-shield-alt" style="font-size: 24px; margin-bottom: 8px; opacity: 0.5;"></i>
+                    <br>No alerts at this time
+                    <br><small>System monitoring patient vitals</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Chatbot -->
+    <div id="chatbotContainer" class="chatbot-container">
+        <div class="chatbot-header">
+            <div class="chatbot-title">
+                <i class="fas fa-robot"></i>
+                Medical AI Assistant
+            </div>
+            <button class="chatbot-close" onclick="toggleChatbot()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="message assistant">
+                <div class="message-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="message-content">
+                    Hello! I'm your AI medical assistant. I can help analyze patient data, explain alerts, and provide insights. How can I assist you today?
+                    <div class="message-time">Just now</div>
+                </div>
+            </div>
+        </div>
+        <div class="chat-input">
+            <div class="chat-input-group">
+                <input type="text" id="chatInput" placeholder="Ask about patient status, vitals, or alerts...">
+                <button class="chat-send-btn" id="sendButton" onclick="sendMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Toggle Button -->
+    <button class="chat-toggle" id="chatToggle" onclick="toggleChatbot()">
+        <i class="fas fa-comments"></i>
+    </button>
+
+    <script>
+        // Global variables
+        let vitalsChart;
+        let isVideoActive = false;
+        let chatOpen = false;
+        let lastVitalsData = {};
+
+        // API Base URL
+        const API_BASE = '';
+
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeChart();
+            loadPatientInfo();
+            startDataUpdates();
+            setupChatInput();
+            checkSystemStatus();
+        });
+
+        // Initialize Chart.js
+        function initializeChart() {
+            const ctx = document.getElementById('vitalsChart').getContext('2d');
+            vitalsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Heart Rate (BPM)',
+                            data: [],
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'SpO₂ (%)',
+                            data: [],
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Temperature (°C)',
+                            data: [],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            tension: 0.4,
+                            yAxisID: 'y1'
+                        },
+                        {
+                            label: 'Respiratory Rate',
+                            data: [],
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            min: 35,
+                            max: 40,
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        }
+                    }
+                }
+            });
+        }
+
+        // Load patient information
+        async function loadPatientInfo() {
+            try {
+                const response = await fetch(`${API_BASE}/api/patient`);
+                const patient = await response.json();
+                
+                document.getElementById('patientName').textContent = patient.name;
+                document.getElementById('patientAge').textContent = patient.age;
+                document.getElementById('patientGender').textContent = patient.gender;
+                document.getElementById('patientRoom').textContent = patient.room;
+                document.getElementById('patientAdmission').textContent = patient.admission_date;
+                document.getElementById('patientCondition').textContent = patient.condition;
+                document.getElementById('attendingDoctor').textContent = patient.attending_doctor;
+                document.getElementById('assignedNurse').textContent = patient.nurse;
+                
+                // Update avatar
+                const avatar = patient.name.split(' ').map(n => n[0]).join('');
+                document.querySelector('.patient-avatar').textContent = avatar;
+                
+            } catch (error) {
+                console.error('Error loading patient info:', error);
+            }
+        }
+
+        // Start real-time data updates
+        function startDataUpdates() {
+            updateVitals();
+            updateAlerts();
+            
+            // Update every 5 seconds
+            setInterval(updateVitals, 5000);
+            setInterval(updateAlerts, 3000);
+        }
+
+        // Update vital signs
+        async function updateVitals() {
+            try {
+                const response = await fetch(`${API_BASE}/api/vitals`);
+                const vitals = await response.json();
+                
+                // Update UI
+                document.getElementById('heartRate').textContent = vitals.heart_rate;
+                document.getElementById('spo2').textContent = vitals.spo2;
+                document.getElementById('temperature').textContent = vitals.temperature;
+                document.getElementById('respiratoryRate').textContent = vitals.respiratory_rate;
+                
+                // Update last update time
+                const now = new Date();
+                document.getElementById('lastUpdate').textContent = now.toLocaleTimeString();
+                
+                // Update vital card statuses
+                updateVitalCardStatus('heartRateCard', 'heart_rate', vitals.heart_rate);
+                updateVitalCardStatus('spo2Card', 'spo2', vitals.spo2);
+                updateVitalCardStatus('tempCard', 'temperature', vitals.temperature);
+                updateVitalCardStatus('respCard', 'respiratory_rate', vitals.respiratory_rate);
+                
+                // Update chart
+                updateChart(vitals);
+                
+                // Update connection status
+                document.getElementById('connectionStatus').textContent = 'Connected';
+                
+                lastVitalsData = vitals;
+                
+            } catch (error) {
+                console.error('Error updating vitals:', error);
+                document.getElementById('connectionStatus').textContent = 'Disconnected';
+            }
+        }
+
+        // Update vital card status based on value
+        function updateVitalCardStatus(cardId, vitalType, value) {
+            const card = document.getElementById(cardId);
+            const ranges = {
+                'heart_rate': { normal: [60, 100], warning: [50, 120] },
+                'spo2': { normal: [95, 100], warning: [90, 94] },
+                'temperature': { normal: [36.0, 37.5], warning: [35.0, 38.5] },
+                'respiratory_rate': { normal: [12, 20], warning: [8, 25] }
+            };
+            
+            const range = ranges[vitalType];
+            let status = 'normal';
+            
+            if (value < range.warning[0] || value > range.warning[1]) {
+                status = 'critical';
+            } else if (value < range.normal[0] || value > range.normal[1]) {
+                status = 'warning';
+            }
+            
+            // Remove existing status classes
+            card.classList.remove('normal', 'warning', 'critical');
+            card.classList.add(status);
+        }
+
+        // Update chart with new data
+        function updateChart(vitals) {
+            const time = new Date().toLocaleTimeString();
+            
+            if (vitalsChart.data.labels.length > 20) {
+                vitalsChart.data.labels.shift();
+                vitalsChart.data.datasets.forEach(dataset => dataset.data.shift());
+            }
+            
+            vitalsChart.data.labels.push(time);
+            vitalsChart.data.datasets[0].data.push(vitals.heart_rate);
+            vitalsChart.data.datasets[1].data.push(vitals.spo2);
+            vitalsChart.data.datasets[2].data.push(vitals.temperature);
+            vitalsChart.data.datasets[3].data.push(vitals.respiratory_rate);
+            
+            vitalsChart.update('none');
+        }
+
+        // Update alerts
+        async function updateAlerts() {
+            try {
+                const response = await fetch(`${API_BASE}/api/alerts`);
+                const alerts = await response.json();
+                
+                document.getElementById('alertCount').textContent = alerts.length;
+                
+                const alertsList = document.getElementById('alertsList');
+                
+                if (alerts.length === 0) {
+                    alertsList.innerHTML = `
+                        <div style="text-align: center; color: #64748b; padding: 20px;">
+                            <i class="fas fa-shield-alt" style="font-size: 24px; margin-bottom: 8px; opacity: 0.5;"></i>
+                            <br>No alerts at this time
+                            <br><small>System monitoring patient vitals</small>
+                        </div>
+                    `;
+                } else {
+                    alertsList.innerHTML = '';
+                    alerts.reverse().forEach(alert => {
+                        const alertElement = createAlertElement(alert);
+                        alertsList.appendChild(alertElement);
+                        
+                        // Show emergency banner for critical alerts
+                        if (alert.type === 'critical') {
+                            showEmergencyBanner();
+                        }
+                    });
+                }
+                
+            } catch (error) {
+                console.error('Error updating alerts:', error);
+            }
+        }
+
+        // Create alert element
+        function createAlertElement(alert) {
+            const div = document.createElement('div');
+            div.className = `alert-item ${alert.type}`;
+            
+            const icon = alert.type === 'critical' ? 'fas fa-exclamation-triangle' : 
+                        alert.type === 'warning' ? 'fas fa-exclamation-circle' : 
+                        'fas fa-info-circle';
+            
+            const iconColor = alert.type === 'critical' ? '#ef4444' : 
+                             alert.type === 'warning' ? '#f59e0b' : '#10b981';
+            
+            div.innerHTML = `
+                <div class="alert-icon">
+                    <i class="${icon}" style="color: ${iconColor};"></i>
+                </div>
+                <div class="alert-content">
+                    <div class="alert-message">${alert.message}</div>
+                    <div class="alert-time">${new Date(alert.timestamp).toLocaleString()}</div>
+                </div>
+            `;
+            
+            return div;
+        }
+
+        // Show emergency banner
+        function showEmergencyBanner() {
+            const banner = document.getElementById('emergencyBanner');
+            banner.style.display = 'block';
+            
+            setTimeout(() => {
+                banner.style.display = 'none';
+            }, 10000);
+        }
+
+        // Test emergency alert
+        async function testEmergency() {
+            try {
+                await fetch(`${API_BASE}/api/alerts/test`, { method: 'POST' });
+                updateAlerts();
+            } catch (error) {
+                console.error('Error testing emergency:', error);
+            }
+        }
+
+        // Clear all alerts
+        async function clearAlerts() {
+            try {
+                await fetch(`${API_BASE}/api/alerts/clear`, { method: 'POST' });
+                updateAlerts();
+            } catch (error) {
+                console.error('Error clearing alerts:', error);
+            }
+        }
+
+        // Toggle video feed
+        function toggleVideoFeed() {
+            const video = document.getElementById('patientVideo');
+            const placeholder = document.getElementById('videoPlaceholder');
+            const statusText = document.getElementById('videoStatus');
+            
+            if (!isVideoActive) {
+                // Start video
+                video.style.display = 'block';
+                placeholder.style.display = 'none';
+                video.play();
+                statusText.textContent = 'Live';
+                isVideoActive = true;
+                
+                // Update AI analysis to reflect video monitoring
+                document.getElementById('aiAnalysis').textContent = 'Monitoring patient via video feed';
+                document.getElementById('activityLevel').textContent = 'Video analysis active';
+            } else {
+                // Stop video
+                video.style.display = 'none';
+                placeholder.style.display = 'block';
+                video.pause();
+                statusText.textContent = 'Ready';
+                isVideoActive = false;
+                
+                // Reset AI analysis
+                document.getElementById('aiAnalysis').textContent = 'Patient appears comfortable and resting';
+                document.getElementById('activityLevel').textContent = 'Low movement';
+            }
+        }
+
+        // Toggle chatbot
+        function toggleChatbot() {
+            const chatbot = document.getElementById('chatbotContainer');
+            const toggle = document.getElementById('chatToggle');
+            
+            chatOpen = !chatOpen;
+            
+            if (chatOpen) {
+                chatbot.classList.add('open');
+                toggle.classList.add('hidden');
+            } else {
+                chatbot.classList.remove('open');
+                toggle.classList.remove('hidden');
+            }
+        }
+
+        // Setup chat input
+        function setupChatInput() {
+            const input = document.getElementById('chatInput');
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+        }
+
+        // Send chat message
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            const messagesContainer = document.getElementById('chatMessages');
+            
+            // Add user message
+            addChatMessage('user', message);
+            input.value = '';
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+                
+                const data = await response.json();
+                
+                // Remove typing indicator
+                removeTypingIndicator();
+                
+                // Add AI response
+                addChatMessage('assistant', data.response);
+                
+            } catch (error) {
+                console.error('Error sending message:', error);
+                removeTypingIndicator();
+                addChatMessage('assistant', 'I apologize, but I\'m currently having trouble processing your request. Please try again later.');
+            }
+        }
+
+        // Add chat message
+        function addChatMessage(sender, message) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const avatar = sender === 'user' ? 'U' : '<i class="fas fa-robot"></i>';
+            const time = new Date().toLocaleTimeString();
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">
+                    ${avatar}
+                </div>
+                <div class="message-content">
+                    ${message}
+                    <div class="message-time">${time}</div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Show typing indicator
+        function showTypingIndicator() {
+            const messagesContainer = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.id = 'typingIndicator';
+            typingDiv.innerHTML = `
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            `;
+            
+            messagesContainer.appendChild(typingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Remove typing indicator
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+
+        // Export chart
+        function exportChart() {
+            const link = document.createElement('a');
+            link.download = 'vitals-chart.png';
+            link.href = vitalsChart.toBase64Image();
+            link.click();
+        }
+
+        // Generate PDF report
+        async function generateReport() {
+            try {
+                const response = await fetch(`${API_BASE}/api/report/generate`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `patient_report_${new Date().toISOString().split('T')[0]}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                } else {
+                    throw new Error('Failed to generate report');
+                }
+            } catch (error) {
+                console.error('Error generating report:', error);
+                alert('Failed to generate report. Please try again.');
+            }
+        }
+
+        // Check system status
+        async function checkSystemStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/api/system/status`);
+                const status = await response.json();
+                
+                if (!status.ai_api_available) {
+                    console.warn('OpenRouter AI API not available - using fallback responses');
+                } else {
+                    console.log('AI Assistant ready: Phi-3.5 Mini 128K Instruct via OpenRouter');
+                }
+                
+            } catch (error) {
+                console.warn('Could not check system status:', error);
+            }
+        }
+    </script>
+</body>
+</html>

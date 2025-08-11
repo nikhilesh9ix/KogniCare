@@ -1,4 +1,9 @@
 # Kognicare Configuration File
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Patient Information
 PATIENT_NAME = "John Doe"
@@ -39,12 +44,12 @@ MAX_HISTORY_RECORDS = 100
 MAX_ALERTS_DISPLAY = 10
 
 # AI Settings
-OPENROUTER_API_KEY = "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"
-OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-AI_MODEL = "microsoft/phi-3.5-mini-128k-instruct"
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "your_api_key_here")
+OPENROUTER_URL = os.getenv("OPENROUTER_URL", "https://openrouter.ai/api/v1/chat/completions")
+AI_MODEL = os.getenv("AI_MODEL", "microsoft/phi-3.5-mini-128k-instruct")
 AI_TIMEOUT = 30  # seconds
 
 # Server Settings
-HOST = "0.0.0.0"
-PORT = 5000
-DEBUG = True
+HOST = os.getenv("HOST", "0.0.0.0")
+PORT = int(os.getenv("PORT", 5000))
+DEBUG = os.getenv("DEBUG", "True").lower() == "true"

@@ -154,6 +154,34 @@ The system monitors the following ranges:
 - Mobile application
 - Cloud deployment with scalability
 
+## 🌐 Deployment
+
+### Deploy to Render
+
+This application is ready for deployment to Render. See [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md) for detailed instructions.
+
+**Quick Deploy:**
+
+1. Push your code to GitHub/GitLab
+2. Connect to Render
+3. Set `OPENROUTER_API_KEY` environment variable
+4. Deploy with these settings:
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `gunicorn app:app`
+
+### Local Production Mode
+
+To run in production mode locally:
+
+```bash
+# Set environment variables
+set DEBUG=False
+set PORT=8080
+
+# Run with gunicorn
+gunicorn app:app --bind 0.0.0.0:8080
+```
+
 ## 🤝 Contributing
 
 This is an educational MVP project. Contributions and suggestions are welcome:
@@ -177,6 +205,7 @@ This project is created for educational purposes. Please ensure proper licensing
 ## 🆘 Support
 
 For issues or questions:
+
 1. Check the console for error messages
 2. Ensure all dependencies are installed
 3. Verify Ollama is running (for AI features)
@@ -184,4 +213,4 @@ For issues or questions:
 
 ---
 
-**Built with ❤️ for healthcare innovation and education**
+### Built with ❤️ for healthcare innovation and education

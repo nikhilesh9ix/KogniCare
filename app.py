@@ -141,6 +141,16 @@ def get_vitals():
     """Get current vital signs"""
     return jsonify(current_vitals)
 
+@app.route('/api/health')
+def health_check():
+    """Health check endpoint for monitoring"""
+    return jsonify({
+        'status': 'healthy',
+        'timestamp': datetime.now().isoformat(),
+        'service': 'kognicare',
+        'version': '1.0.0'
+    })
+
 @app.route('/api/vitals/history')
 def get_vitals_history():
     """Get historical vital signs data"""
@@ -394,14 +404,10 @@ def system_status():
         'system_time': datetime.now().isoformat()
     })
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Create templates directory if it doesn't exist
     if not os.path.exists('templates'):
         os.makedirs('templates')
     
-    print("🩺 Kognicare AI Patient Monitoring System Starting...")
-    print("📊 Vitals simulation: Active")
-    print("🤖 AI Assistant: Checking Ollama...")
-    print("🌐 Dashboard: http://localhost:5000")
-    
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)

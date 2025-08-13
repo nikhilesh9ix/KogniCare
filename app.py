@@ -31,6 +31,9 @@ current_vitals = {
 vitals_history = []
 alerts_list = []
 
+# Flag to track if simulation is started
+simulation_started = False
+
 # Patient information
 patient_info = {
     'name': 'John Doe',
@@ -63,20 +66,20 @@ def get_vital_status(vital_name, value):
         return 'critical'
 
 def generate_realistic_vitals():
-    """Generate realistic vital signs with some variation"""
+    """Generate realistic vital signs with controlled variation"""
     global current_vitals
     
-    # Add some realistic variation
-    current_vitals['heart_rate'] += random.randint(-3, 3)
-    current_vitals['spo2'] += random.randint(-1, 1)
-    current_vitals['temperature'] += random.uniform(-0.2, 0.2)
-    current_vitals['respiratory_rate'] += random.randint(-1, 1)
+    # More conservative changes to prevent extreme values
+    current_vitals['heart_rate'] += random.randint(-2, 2)
+    current_vitals['spo2'] += random.randint(-1, 1) if random.random() < 0.3 else 0
+    current_vitals['temperature'] += random.uniform(-0.1, 0.1)
+    current_vitals['respiratory_rate'] += random.randint(-1, 1) if random.random() < 0.4 else 0
     
-    # Keep within reasonable bounds
-    current_vitals['heart_rate'] = max(45, min(150, current_vitals['heart_rate']))
-    current_vitals['spo2'] = max(85, min(100, current_vitals['spo2']))
-    current_vitals['temperature'] = max(34.0, min(42.0, round(current_vitals['temperature'], 1)))
-    current_vitals['respiratory_rate'] = max(8, min(30, current_vitals['respiratory_rate']))
+    # Keep within safer bounds to reduce alert spam
+    current_vitals['heart_rate'] = max(55, min(120, current_vitals['heart_rate']))
+    current_vitals['spo2'] = max(92, min(100, current_vitals['spo2']))
+    current_vitals['temperature'] = max(35.5, min(39.0, round(current_vitals['temperature'], 1)))
+    current_vitals['respiratory_rate'] = max(10, min(25, current_vitals['respiratory_rate']))
     
     current_vitals['timestamp'] = datetime.now().isoformat()
     
@@ -87,12 +90,17 @@ def generate_realistic_vitals():
     if len(vitals_history) > 100:
         vitals_history.pop(0)
     
-    # Check for alerts
+    # Check for alerts less frequently to reduce spam
+    if random.random() < 0.3:  # Only check 30% of the time
+        check_vitals_alerts()
     check_vitals_alerts()
 
 def check_vitals_alerts():
     """Check vital signs and generate alerts if necessary"""
     global alerts_list
+    
+    # Limit total alerts to prevent memory issues
+    MAX_ALERTS = 50
     
     for vital_name, value in current_vitals.items():
         if vital_name == 'timestamp':
@@ -101,44 +109,73 @@ def check_vitals_alerts():
         status = get_vital_status(vital_name, value)
         
         if status in ['warning', 'critical']:
-            alert = {
-                'id': len(alerts_list) + 1,
-                'type': status,
-                'vital': vital_name,
-                'value': value,
-                'message': f"{vital_name.replace('_', ' ').title()} is {status}: {value}",
-                'timestamp': datetime.now().isoformat(),
-                'acknowledged': False
-            }
-            
-            # Avoid duplicate alerts within 30 seconds
+            # Check for recent similar alerts (within 60 seconds)
+            current_time = datetime.now()
             recent_alerts = [a for a in alerts_list if 
                            a['vital'] == vital_name and 
                            a['type'] == status and
-                           (datetime.now() - datetime.fromisoformat(a['timestamp'])).seconds < 30]
+                           (current_time - datetime.fromisoformat(a['timestamp'])).total_seconds() < 60]
             
-            if not recent_alerts:
+            # Only add alert if no recent similar alerts
+            if not recent_alerts and len(alerts_list) < MAX_ALERTS:
+                alert = {
+                    'id': len(alerts_list) + 1,
+                    'type': status,
+                    'vital': vital_name,
+                    'value': value,
+                    'message': f"{vital_name.replace('_', ' ').title()} is {status}: {value}",
+                    'timestamp': current_time.isoformat(),
+                    'acknowledged': False
+                }
                 alerts_list.append(alert)
-                print(f"Alert generated: {alert['message']}")
+                # Reduce console spam in production
+                if len(alerts_list) <= 10:  # Only log first 10 alerts
+                    print(f"Alert generated: {alert['message']}")
+    
+    # Keep only recent alerts (last 30 minutes)
+    cutoff_time = datetime.now() - timedelta(minutes=30)
+    alerts_list = [a for a in alerts_list if 
+                   datetime.fromisoformat(a['timestamp']) > cutoff_time]
 
 def vitals_simulation():
     """Background thread to simulate real-time vitals"""
-    while True:
-        generate_realistic_vitals()
-        time.sleep(5)  # Update every 5 seconds
+    try:
+        while True:
+            generate_realistic_vitals()
+            time.sleep(10)  # Update every 10 seconds (reduced frequency)
+    except Exception as e:
+        print(f"Simulation error: {e}")
+        # Restart simulation after error
+        time.sleep(5)
+        vitals_simulation()
 
-# Start the simulation thread
-simulation_thread = threading.Thread(target=vitals_simulation, daemon=True)
-simulation_thread.start()
+def start_simulation():
+    """Start the vitals simulation if not already started"""
+    global simulation_started
+    
+    # Skip simulation if disabled via environment variable
+    if os.environ.get('DISABLE_SIMULATION', 'false').lower() == 'true':
+        return
+        
+    if not simulation_started:
+        try:
+            simulation_thread = threading.Thread(target=vitals_simulation, daemon=True)
+            simulation_thread.start()
+            simulation_started = True
+            print("Vitals simulation started")
+        except Exception as e:
+            print(f"Failed to start simulation: {e}")
 
 @app.route('/')
 def index():
     """Serve the main dashboard"""
+    start_simulation()  # Start simulation on first request
     return render_template('index.html')
 
 @app.route('/api/vitals')
 def get_vitals():
     """Get current vital signs"""
+    start_simulation()  # Ensure simulation is running
     return jsonify(current_vitals)
 
 @app.route('/api/health')
@@ -408,6 +445,9 @@ if __name__ == "__main__":
     # Create templates directory if it doesn't exist
     if not os.path.exists('templates'):
         os.makedirs('templates')
+    
+    # Start the simulation thread when running directly (not via gunicorn)
+    start_simulation()
     
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)

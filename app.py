@@ -46,12 +46,12 @@ patient_info = {
     'nurse': 'Emily Johnson'
 }
 
-# Normal ranges for vitals
+# Normal ranges for vitals - optimized to reduce false alerts
 VITAL_RANGES = {
-    'heart_rate': {'normal': (60, 100), 'warning': (50, 120), 'critical': (40, 150)},
-    'spo2': {'normal': (95, 100), 'warning': (90, 94), 'critical': (0, 89)},
-    'temperature': {'normal': (36.5, 37.5), 'warning': (35.5, 38.0), 'critical': (34.0, 40.0)},
-    'respiratory_rate': {'normal': (12, 20), 'warning': (8, 25), 'critical': (6, 30)}
+    'heart_rate': {'normal': (60, 100), 'warning': (45, 120), 'critical': (35, 140)},
+    'spo2': {'normal': (95, 100), 'warning': (88, 94), 'critical': (0, 87)},
+    'temperature': {'normal': (36.0, 38.0), 'warning': (35.0, 39.0), 'critical': (33.0, 41.0)},
+    'respiratory_rate': {'normal': (10, 25), 'warning': (8, 30), 'critical': (5, 35)}
 }
 
 def get_vital_status(vital_name, value):
@@ -69,17 +69,33 @@ def generate_realistic_vitals():
     """Generate realistic vital signs with controlled variation"""
     global current_vitals
     
-    # More conservative changes to prevent extreme values
-    current_vitals['heart_rate'] += random.randint(-2, 2)
-    current_vitals['spo2'] += random.randint(-1, 1) if random.random() < 0.3 else 0
-    current_vitals['temperature'] += random.uniform(-0.1, 0.1)
-    current_vitals['respiratory_rate'] += random.randint(-1, 1) if random.random() < 0.4 else 0
+    # Production mode: even more conservative
+    is_production = os.environ.get('DEBUG', 'False').lower() == 'false'
     
-    # Keep within safer bounds to reduce alert spam
-    current_vitals['heart_rate'] = max(55, min(120, current_vitals['heart_rate']))
-    current_vitals['spo2'] = max(92, min(100, current_vitals['spo2']))
-    current_vitals['temperature'] = max(35.5, min(39.0, round(current_vitals['temperature'], 1)))
-    current_vitals['respiratory_rate'] = max(10, min(25, current_vitals['respiratory_rate']))
+    if is_production:
+        # Very minimal changes in production
+        current_vitals['heart_rate'] += random.randint(-1, 1) if random.random() < 0.2 else 0
+        current_vitals['spo2'] += random.randint(-1, 1) if random.random() < 0.1 else 0
+        current_vitals['temperature'] += random.uniform(-0.05, 0.05) if random.random() < 0.2 else 0
+        current_vitals['respiratory_rate'] += random.randint(-1, 1) if random.random() < 0.15 else 0
+        
+        # Stay well within normal ranges
+        current_vitals['heart_rate'] = max(70, min(90, current_vitals['heart_rate']))
+        current_vitals['spo2'] = max(97, min(100, current_vitals['spo2']))
+        current_vitals['temperature'] = max(36.5, min(37.3, round(current_vitals['temperature'], 1)))
+        current_vitals['respiratory_rate'] = max(14, min(20, current_vitals['respiratory_rate']))
+    else:
+        # Development mode: more variation for testing
+        current_vitals['heart_rate'] += random.randint(-2, 2)
+        current_vitals['spo2'] += random.randint(-1, 1) if random.random() < 0.3 else 0
+        current_vitals['temperature'] += random.uniform(-0.1, 0.1)
+        current_vitals['respiratory_rate'] += random.randint(-1, 1) if random.random() < 0.4 else 0
+        
+        # Keep within normal ranges to minimize alerts
+        current_vitals['heart_rate'] = max(65, min(95, current_vitals['heart_rate']))
+        current_vitals['spo2'] = max(96, min(100, current_vitals['spo2']))
+        current_vitals['temperature'] = max(36.2, min(37.8, round(current_vitals['temperature'], 1)))
+        current_vitals['respiratory_rate'] = max(12, min(22, current_vitals['respiratory_rate']))
     
     current_vitals['timestamp'] = datetime.now().isoformat()
     
@@ -90,8 +106,9 @@ def generate_realistic_vitals():
     if len(vitals_history) > 100:
         vitals_history.pop(0)
     
-    # Check for alerts less frequently to reduce spam
-    if random.random() < 0.3:  # Only check 30% of the time
+    # Check for alerts less frequently in production
+    check_frequency = 0.1 if is_production else 0.3
+    if random.random() < check_frequency:
         check_vitals_alerts()
     check_vitals_alerts()
 

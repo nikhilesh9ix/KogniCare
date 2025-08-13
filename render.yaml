@@ -4,7 +4,7 @@ services:
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --timeout 120 --workers 1
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120 --workers 1
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.0
@@ -14,8 +14,3 @@ services:
         value: "0.0.0.0"
       - key: DISABLE_SIMULATION
         value: "False"
-      - key: PORT
-        fromService:
-          type: web
-          name: kognicare
-          property: port

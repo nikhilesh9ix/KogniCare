@@ -170,8 +170,15 @@ def start_simulation():
     """Start the vitals simulation if not already started"""
     global simulation_started
     
+    # Completely disable simulation in production for stability
+    is_production = os.environ.get('DEBUG', 'False').lower() == 'false'
+    if is_production:
+        print("Production mode: Vitals simulation disabled for stability")
+        return
+    
     # Skip simulation if disabled via environment variable
     if os.environ.get('DISABLE_SIMULATION', 'false').lower() == 'true':
+        print("Simulation disabled via DISABLE_SIMULATION environment variable")
         return
         
     if not simulation_started:
@@ -192,7 +199,20 @@ def index():
 @app.route('/api/vitals')
 def get_vitals():
     """Get current vital signs"""
-    start_simulation()  # Ensure simulation is running
+    # In production, ensure we have stable vitals if simulation is disabled
+    is_production = os.environ.get('DEBUG', 'False').lower() == 'false'
+    if is_production and not simulation_started:
+        # Return stable, normal vitals for production demo
+        stable_vitals = {
+            'heart_rate': 76,
+            'spo2': 98,
+            'temperature': 37.0,
+            'respiratory_rate': 16,
+            'timestamp': datetime.now().isoformat()
+        }
+        return jsonify(stable_vitals)
+    
+    start_simulation()  # Ensure simulation is running (dev mode only)
     return jsonify(current_vitals)
 
 @app.route('/api/health')
@@ -208,6 +228,22 @@ def health_check():
 @app.route('/api/vitals/history')
 def get_vitals_history():
     """Get historical vital signs data"""
+    is_production = os.environ.get('DEBUG', 'False').lower() == 'false'
+    if is_production and not vitals_history:
+        # Return some stable demo data for production
+        now = datetime.now()
+        demo_history = []
+        for i in range(10):
+            demo_vitals = {
+                'heart_rate': 75 + (i % 3),
+                'spo2': 98 + (i % 2),
+                'temperature': 37.0 + (i * 0.1),
+                'respiratory_rate': 16 + (i % 2),
+                'timestamp': (now - timedelta(minutes=5*i)).isoformat()
+            }
+            demo_history.append(demo_vitals)
+        return jsonify(demo_history[::-1])  # Reverse to show oldest first
+    
     return jsonify(vitals_history[-20:])  # Last 20 readings
 
 @app.route('/api/patient')

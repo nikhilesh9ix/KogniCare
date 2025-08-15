@@ -57,7 +57,7 @@ cd kognicare
 
 2. **Install Python dependencies:**
 ```bash
-pip install -r rtxtequirements.
+pip install -r requirements.txt
 ```
 
 3. **Run the application:**
@@ -79,7 +79,9 @@ Open your browser to `http://localhost:5000`
 
 ## Demo links (video/live deployment)
 
+- **Demo Video**: [Add your demo video link here]
 - **Live Deployment**: https://kognicare.onrender.com
+- **Presentation**: [Add presentation link if available]
 
 ## License
 

@@ -4,17 +4,15 @@ KogniCare - AI-Integrated Patient Monitoring System
 
 ## Team Name and Members
 
-**Team Name:** [Add your team name here]
+**Team Name:** Enigma
 
 **Team Members:**
-- [Add team member 1]
-- [Add team member 2]
-- [Add team member 3]
-- [Add more members as needed]
+- Kuppili Nikhilesh Raju
+- Hansika Belgavi
 
 ## Problem Statement Reference
 
-[Add the specific problem statement reference/number from the hackathon]
+Hospitals, especially in emerging markets, face critical patient safety risks due to limited staff, delayed emergency responses, and overwhelming volumes of patient data. The absence of continuous real-time monitoring means early warning signs often go unnoticed, leading to preventable complications, misdiagnosis — particularly in cancer detection — and treatment errors. These gaps not only increase healthcare costs but also put lives at risk, especially in high-demand environments like oncology centers and under-resourced hospitals.
 
 ## Overview of your solution
 

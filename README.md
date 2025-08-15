@@ -4,7 +4,7 @@ KogniCare - AI-Integrated Patient Monitoring System
 
 ## Team Name and Members
 
-**Team Name:** Enigma
+**Team Name:** KogniCare
 
 **Team Members:**
 - Kuppili Nikhilesh Raju
